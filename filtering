@@ -1,0 +1,56 @@
+Sub FilterBlotterData()
+    Dim wsFiltered As Worksheet
+    Dim targetAccount As String
+    Dim lastRow As Long
+    Dim headerRow As Long
+    Dim dataRange As Range
+    Dim filteredRange As Range
+    Dim masterBlotterPath As String
+    Dim wbMasterBlotter As Workbook
+    Dim wsBlotter As Worksheet
+
+    ' Define the path to the master blotter file
+    masterBlotterPath = "H:\0. 2024 Project\04. DAC Positions\2024 Master Blotter.xlsm" ' Update with the actual path
+
+    ' Get the target account number from cell A1
+    targetAccount = ThisWorkbook.Sheets("Positions").Range("A1").Value ' Update "Sheet1" to your actual sheet name
+
+    ' Open the master blotter workbook
+    Set wbMasterBlotter = Workbooks.Open(masterBlotterPath)
+    Set wsBlotter = wbMasterBlotter.Sheets("Blotter") ' Update with the actual sheet name if different
+
+    ' Add a new sheet for filtered data in the new file
+    On Error Resume Next
+    Set wsFiltered = ThisWorkbook.Sheets("FilteredData")
+    If wsFiltered Is Nothing Then
+        Set wsFiltered = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        wsFiltered.Name = "FilteredData"
+    Else
+        wsFiltered.Cells.Clear
+    End If
+    On Error GoTo 0
+    
+    ' Find the last row in the blotter sheet
+    lastRow = wsBlotter.Cells(wsBlotter.Rows.Count, "C").End(xlUp).Row
+    
+    ' Define the header row and data range
+    headerRow = 7
+    Set dataRange = wsBlotter.Range("B" & headerRow & ":BA" & lastRow) ' Adjust column range as needed
+    
+    ' Apply filter to the data range, starting from row 7
+    wsBlotter.Range("A7:BA" & lastRow).AutoFilter Field:=6, Criteria1:=targetAccount
+
+    
+    ' Copy the header row to the filtered sheet
+    wsBlotter.Range("B7:BA7").Copy Destination:=wsFiltered.Rows(1)
+    
+    ' Copy the filtered data to the filtered sheet
+    Set filteredRange = dataRange.Offset(1, 0).Resize(dataRange.Rows.Count - 1).SpecialCells(xlCellTypeVisible)
+    filteredRange.Copy Destination:=wsFiltered.Rows(2)
+    
+    ' Remove the filter
+    wsBlotter.AutoFilterMode = False
+    
+    ' Close the master blotter workbook without saving
+    wbMasterBlotter.Close SaveChanges:=False
+End Sub
